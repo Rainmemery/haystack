@@ -1,0 +1,10 @@
+---
+fixes:
+  - |
+    ``Document``: give an empty ``content`` (``""``) an auto-generated id that differs from a
+    missing one (``None``). Before this change ``Document(content="")`` and
+    ``Document(content=None)`` hashed to the same id whenever their other fields matched, so
+    writing both in one call raised a misleading ``DuplicateDocumentError`` and writing them in
+    separate calls stored two documents under a single id. Ids of documents without content are
+    unchanged; documents with an empty-string content get a new id, so persisted stores treat
+    them as new documents on the next write.

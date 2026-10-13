@@ -423,3 +423,33 @@ def test_warn_on_inplace_mutation():
     doc = Document(content="test")
     with pytest.warns(Warning, match="dataclasses.replace"):
         doc.content = "other"
+
+
+def test_empty_string_content_has_distinct_id():
+    """
+    An empty string is a valid `content` value, so it must not collapse to the same
+    auto-generated id as a missing (``None``) content.
+    """
+    assert Document(content="").id != Document(content=None).id
+
+
+def test_missing_content_id_is_stable():
+    """
+    Documents without content keep their historical id, so existing stores are unaffected.
+    """
+    assert Document(content=None).id == "d4675c57fcfe114db0b95f1da46eea3c5d6f5729c17d01fb5251ae19830a3455"
+
+
+def test_empty_and_missing_content_are_not_duplicates():
+    """
+    Writing both in one call must not raise DuplicateDocumentError, and both must be
+    retrievable under distinct ids.
+    """
+    from haystack.document_stores.in_memory import InMemoryDocumentStore
+
+    store = InMemoryDocumentStore()
+    store.write_documents([Document(content="hello"), Document(content=""), Document(content=None)])
+
+    stored = store.filter_documents()
+    assert len(stored) == 3
+    assert len({doc.id for doc in stored}) == 3
